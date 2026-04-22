@@ -1,0 +1,69 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ============================
+     PATIENT THEME (Dark Navy + Teal)
+     ============================ */
+  --patient-bg: #0A0F2C;
+  --patient-primary: #00D4C8;
+  --patient-secondary: #0066FF;
+  --patient-text: #FFFFFF;
+  --patient-hover: #00F5E9;
+  --patient-error: #FF4757;
+  --patient-card: #111638;
+
+  /* ============================
+     DOCTOR THEME (Soft Medical)
+     ============================ */
+  --doc-bg: #F8FAF9;
+  --doc-sidebar: #FFFFFF;
+  --doc-primary: #4A7C6F;
+  --doc-secondary: #6B9E8F;
+  --doc-text-main: #1A2E2A;
+  --doc-text-sec: #5A7A74;
+  --doc-card: #FFFFFF;
+  --doc-border: #E2EBE8;
+  --doc-alert-red: #D64045;
+  --doc-alert-amber: #E8A838;
+  --doc-alert-green: #4A7C6F;
+  --doc-hover: #EFF5F3;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  
+  --shadow-soft: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Base layouts mapped to body classes based on route or layout component */
+.patient-layout {
+  background-color: var(--patient-bg);
+  color: var(--patient-text);
+  min-height: 100vh;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.doctor-layout {
+  background-color: var(--doc-bg);
+  color: var(--doc-text-main);
+  min-height: 100vh;
+  display: flex;
+}
+
+/* Reusable Helpers */
+.glass-effect {
+  background: rgba(17, 22, 56, 0.7);
+  backdrop-filter: blur(10px);
+}
