@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WebGazer Test</title>
+  <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0f172a;
+      color: #f8fafc;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 60px;
+      min-height: 100vh;
+      user-select: none;
+    }
+    h1 { font-size: 28px; margin-bottom: 8px; }
+    p  { color: #64748b; margin-bottom: 40px; font-size: 14px; }
+
+    #status {
+      padding: 6px 20px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 48px;
+      background: #1e293b;
+      color: #94a3b8;
+    }
+    #status.ok  { background: #14532d; color: #86efac; }
+    #status.err { background: #450a0a; color: #fca5a5; }
+
+    #boxes {
+      display: flex;
+      gap: 32px;
+    }
+
+    .box {
+      width: 200px;
+      height: 200px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: bold;
+      color: #fff;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    /* Dwell ring using conic-gradient */
+    .box::before {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 26px;
+      background: conic-gradient(#00e5ff var(--pct, 0%), transparent var(--pct, 0%));
+      opacity: 0;
+      transition: opacity 0.1s;
+    }
+    .box.dwelling::before { opacity: 1; }
+    .box.dwelling { transform: scale(1.05); }
+
+    #result {
+      margin-top: 48px;
+      font-size: 20px;
+      color: #94a3b8;
+      min-height: 32px;
+    }
+    #result span { color: #f8fafc; font-weight: bold; }
+
+    /* Gaze dot */
+    #gaze-dot {
+      position: fixed;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(0,229,255,0.35);
+      border: 2px solid #00e5ff;
+      pointer-events: none;
+      z-index: 9999;
+      display: none;
+      transform: translate(-50%, -50%);
+    }
+
+    #coords {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      background: #1e293b;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #475569;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>ISpeak — Gaze Demo</h1>
+  <p>Week 1 • Eye Tracking</p>
+
+  <div id="status">◌ Initialising WebGazer...</div>
+
+  <div id="boxes">
+    <div class="box" id="happy"   style="background:#16a34a" data-glow="#22c55e">😊 Happy</div>
+    <div class="box" id="neutral" style="background:#d97706" data-glow="#fbbf24">😐 Neutral</div>
+    <div class="box" id="pain"    style="background:#dc2626" data-glow="#f87171">😣 Pain</div>
+  </div>
+
+  <div id="result"></div>
+  <div id="gaze-dot"></div>
+  <div id="coords">gaze (-, -)</div>
+
+<script>
+  const DWELL_TIME = 1000; // ms
+
+  const dot    = document.getElementById('gaze-dot');
+  const coords = document.getElementById('coords');
+  const status = document.getElementById('status');
+  const result = document.getElementById('result');
+  const boxes  = document.querySelectorAll('.box');
+
+  let dwellStart = {};
+  let dwellTimer = {};
+
+  function clearDwell(id) {
+    clearInterval(dwellTimer[id]);
+    delete dwellTimer[id];
+    delete dwellStart[id];
+    const el = document.getElementById(id);
+    if (el) {
+      el.classList.remove('dwelling');
+      el.style.setProperty('--pct', '0%');
+      el.style.boxShadow = '0 4px 20px rgba(0,0,0,0.4)';
+    }
+  }
+
+  function onSelect(id) {
+    const el = document.getElementById(id);
+    const label = el.innerText;
+    result.innerHTML = `Patient selected: <span>${label}</span>`;
+    clearDwell(id);
+  }
+
+  webgazer.setGazeListener(function(data, elapsed) {
+    if (!data) return;
+
+    const x = data.x;
+    const y = data.y;
+
+    // Move gaze dot
+    dot.style.display = 'block';
+    dot.style.left = x + 'px';
+    dot.style.top  = y + 'px';
+    coords.textContent = `gaze (${Math.round(x)}, ${Math.round(y)})`;
+
+    // Check each box
+    boxes.forEach(function(box) {
+      const id   = box.id;
+      const rect = box.getBoundingClientRect();
+      const inside = x >= rect.left && x <= rect.right &&
+                     y >= rect.top  && y <= rect.bottom;
+
+      if (inside) {
+        if (!dwellStart[id]) {
+          dwellStart[id] = Date.now();
+          dwellTimer[id] = setInterval(function() {
+            const pct = Math.min(((Date.now() - dwellStart[id]) / DWELL_TIME) * 100, 100);
+            box.classList.add('dwelling');
+            box.style.setProperty('--pct', pct + '%');
+            box.style.boxShadow = `0 0 40px 10px ${box.dataset.glow}`;
+            if (pct >= 100) {
+              clearInterval(dwellTimer[id]);
+              onSelect(id);
+            }
+          }, 50);
+        }
+      } else {
+        clearDwell(id);
+      }
+    });
+
+  }).begin().then(function() {
+    status.textContent = '● Camera active — look at a box for 1 second';
+    status.className = 'ok';
+  }).catch(function(err) {
+    status.textContent = '✗ Camera error: ' + err.message;
+    status.className = 'err';
+  });
+
+  webgazer.showVideoPreview(true).showPredictionPoints(false);
+</script>
+</body>
+</html>
